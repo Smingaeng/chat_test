@@ -2,7 +2,6 @@ from fastapi import FastAPI, Depends, Path, HTTPException
 from pydantic import BaseModel
 from database import engineconn
 from models import User
-from models import Test
 
 app = FastAPI()
 
@@ -45,127 +44,135 @@ async def read_user(user_id: int):
     }
 
     return user_data
+# 사용자 등록
+@app.post("/users/")
+async def create_user(item: Item):
+    user = User(**item.dict())
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return user
+# 특정 사용자 정보 업데이트
+@app.put("/users/{user_id}")
+async def update_user(user_id: int, item: Item):
+    user = session.query(User).filter(User.id == user_id).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    for key, value in item.dict().items():
+        setattr(user, key, value)
+    session.commit()
+    session.refresh(user)
+    return user
 
-# # 시나리오 관련 모델
-# class Scenario(BaseModel):
-#     id: int
-#     name: str
-#
-# # 피드백 관련 모델
-# class Feedback(BaseModel):
-#     id: int
-#     text: str
-#
-# # 역할 관련 모델
-# class Role(BaseModel):
-#     id: int
-#     name: str
-#
-# # 사용자 관련 API
-# @app.get("/users", response_model=List[User])
-# async def read_users():
-#     return users
-#
-# @app.post("/users", response_model=User)
-# async def create_user(user: User):
-#     users.append(user)
-#     return user
-#
-# @app.get("/users/{user_id}", response_model=User)
-# async def read_user(user_id: int):
-#     for user in users:
-#         if user.id == user_id:
-#             return user
-#     raise HTTPException(status_code=404, detail="User not found")
-#
-# @app.put("/users/{user_id}", response_model=User)
-# async def update_user(user_id: int, user: User):
-#     for i, u in enumerate(users):
-#         if u.id == user_id:
-#             users[i] = user
-#             return user
-#     raise HTTPException(status_code=404, detail="User not found")
-#
-# @app.delete("/users/{user_id}")
-# async def delete_user(user_id: int):
-#     for i, user in enumerate(users):
-#         if user.id == user_id:
-#             del users[i]
-#             return {"message": "User deleted successfully"}
-#     raise HTTPException(status_code=404, detail="User not found")
-#
-# # 시나리오 관련 API
-# @app.get("/scenarios", response_model=List[Scenario])
+# 특정 사용자 삭제
+@app.delete("/users/{user_id}")
+async def delete_user(user_id: int):
+    user = session.query(User).filter(User.id == user_id).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    session.delete(user)
+    session.commit()
+    return {"message": "User deleted successfully"}
+
+# # 모든 시나리오 조회
+# @app.get("/scenarios")
 # async def read_scenarios():
+#     scenarios = session.query(Scenario).all()
 #     return scenarios
 #
-# @app.post("/scenarios", response_model=Scenario)
-# async def create_scenario(scenario: Scenario):
-#     scenarios.append(scenario)
+# # 새 시나리오 생성
+# @app.post("/scenarios/")
+# async def create_scenario(item: Item):
+#     scenario = Scenario(**item.dict())
+#     session.add(scenario)
+#     session.commit()
+#     session.refresh(scenario)
 #     return scenario
 #
-# @app.get("/scenarios/{scenario_id}", response_model=Scenario)
+# # 특정 시나리오 조회
+# @app.get("/scenarios/{scenario_id}")
 # async def read_scenario(scenario_id: int):
-#     for scenario in scenarios:
-#         if scenario.id == scenario_id:
-#             return scenario
-#     raise HTTPException(status_code=404, detail="Scenario not found")
+#     scenario = session.query(Scenario).filter(Scenario.id == scenario_id).first()
+#     if scenario is None:
+#         raise HTTPException(status_code=404, detail="Scenario not found")
+#     return scenario
 #
+# # 특정 시나리오 삭제
 # @app.delete("/scenarios/{scenario_id}")
 # async def delete_scenario(scenario_id: int):
-#     for i, scenario in enumerate(scenarios):
-#         if scenario.id == scenario_id:
-#             del scenarios[i]
-#             return {"message": "Scenario deleted successfully"}
-#     raise HTTPException(status_code=404, detail="Scenario not found")
+#     scenario = session.query(Scenario).filter(Scenario.id == scenario_id).first()
+#     if scenario is None:
+#         raise HTTPException(status_code=404, detail="Scenario not found")
+#     session.delete(scenario)
+#     session.commit()
+#     return {"message": "Scenario deleted successfully"}
 #
-# # 피드백 관련 API
-# @app.get("/feedbacks", response_model=List[Feedback])
+# # 모든 피드백 조회
+# @app.get("/feedbacks")
 # async def read_feedbacks():
+#     feedbacks = session.query(Feedback).all()
 #     return feedbacks
 #
-# @app.post("/feedbacks", response_model=Feedback)
-# async def create_feedback(feedback: Feedback):
-#     feedbacks.append(feedback)
+# # 새 피드백 생성
+# @app.post("/feedbacks/")
+# async def create_feedback(item: Item):
+#     feedback = Feedback(**item.dict())
+#     session.add(feedback)
+#     session.commit()
+#     session.refresh(feedback)
 #     return feedback
 #
-# @app.get("/feedbacks/{feedback_id}", response_model=Feedback)
+# # 특정 피드백 조회
+# @app.get("/feedbacks/{feedback_id}")
 # async def read_feedback(feedback_id: int):
-#     for feedback in feedbacks:
-#         if feedback.id == feedback_id:
-#             return feedback
-#     raise HTTPException(status_code=404, detail="Feedback not found")
+#     feedback = session.query(Feedback).filter(Feedback.id == feedback_id).first()
+#     if feedback is None:
+#         raise HTTPException(status_code=404, detail="Feedback not found")
+#     return feedback
 #
+# # 특정 피드백 삭제
 # @app.delete("/feedbacks/{feedback_id}")
 # async def delete_feedback(feedback_id: int):
-#     for i, feedback in enumerate(feedbacks):
-#         if feedback.id == feedback_id:
-#             del feedbacks[i]
-#             return {"message": "Feedback deleted successfully"}
-#     raise HTTPException(status_code=404, detail="Feedback not found")
+#     feedback = session.query(Feedback).filter(Feedback.id == feedback_id).first()
+#     if feedback is None:
+#         raise HTTPException(status_code=404, detail="Feedback not found")
+#     session.delete(feedback)
+#     session.commit()
+#     return {"message": "Feedback deleted successfully"}
 #
-# # 역할 관련 API
-# @app.get("/roles", response_model=List[Role])
+# # 모든 역할 조회
+# @app.get("/roles")
 # async def read_roles():
+#     roles = session.query(Role).all()
 #     return roles
 #
-# @app.post("/roles", response_model=Role)
-# async def create_role(role: Role):
-#     roles.append(role)
+# # 새 역할 생성
+# @app.post("/roles/")
+# async def create_role(item: Item):
+#     role = Role(**item.dict())
+#     session.add(role)
+#     session.commit()
+#     session.refresh(role)
 #     return role
 #
-# @app.put("/roles/{role_id}", response_model=Role)
-# async def update_role(role_id: int, role: Role):
-#     for i, r in enumerate(roles):
-#         if r.id == role_id:
-#             roles[i] = role
-#             return role
-#     raise HTTPException(status_code=404, detail="Role not found")
+# # 특정 역할 정보 업데이트
+# @app.put("/roles/{role_id}")
+# async def update_role(role_id: int, item: Item):
+#     role = session.query(Role).filter(Role.id == role_id).first()
+#     if role is None:
+#         raise HTTPException(status_code=404, detail="Role not found")
+#     for key, value in item.dict().items():
+#         setattr(role, key, value)
+#     session.commit()
+#     session.refresh(role)
+#     return role
 #
+# # 특정 역할 삭제
 # @app.delete("/roles/{role_id}")
 # async def delete_role(role_id: int):
-#     for i, role in enumerate(roles):
-#         if role.id == role_id:
-#             del roles[i]
-#             return {"message": "Role deleted successfully"}
-#     raise HTTPException(status_code=404, detail="Role not found")
+#     role = session.query(Role).filter(Role.id == role_id).first()
+#     if role is None:
+#         raise HTTPException(status_code=404, detail="Role not found")
+#     session.delete(role)
+#     session.commit()
+#     return {"message": "Role deleted successfully"}

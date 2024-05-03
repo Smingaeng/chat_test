@@ -29,6 +29,7 @@ class User(Base):
     notifications = relationship("Notification", back_populates="user")
     today_conversations = relationship("TodayConversation", back_populates="user")
 
+
 class Scenario(Base):
     __tablename__ = 'scenarios'
 
